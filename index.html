@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="fr">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>État de l’art d’ES2015+ dans Node.js et le navigateur • Christophe Porteneuve @ Blend Web Mix 2016</title>
+
+		<meta name="description" content="Où en est-on côté prise en charge native ? Comment couvrir l’écart de façon optimale, en dev comme en production ? Et ES2016, ES2017…?">
+		<meta name="author" content="Christophe Porteneuve">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link href='css/fonts.css' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/animate.min.css">
+		<link rel="stylesheet" href="css/theme/sky.css" id="theme-basis">
+		<link rel="stylesheet" href="css/theme/pw15.css" id="theme">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/prism.css">
+
+		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+		<script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+
+<!--     <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-43650325-10', 'auto');
+      ga('require', 'linkid');
+      ga('send', 'pageview');
+    </script> -->
+	</head>
+
+	<body id="prioFix">
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section id="mainTitle">
+					<h1>
+            État de l’art d’ES2015+
+            <span>dans Node.js et le navigateur</span>
+          </h1>
+					<p>
+						<small>Une présentation de <a href="http://tddsworld.com/">Christophe Porteneuve</a> à <a href="http://www.blendwebmix.com/">Blend Web Mix 2016</a></small>
+					</p>
+				</section>
+
+				<section id="whoami">
+					<h2>whoami</h2>
+
+					<pre><code data-trim class="language-js">
+const christophe = {
+  age:        38.99931553730322,
+  family:     { wife: 'Élodie', son: 'Maxence' },
+  city:       'Paris, FR',
+  company:    'Delicious Insights',
+  trainings:  ['JS Total', 'Node.js', 'Git Total'],
+  upcoming:   ['ES2015+', 'GitHub', 'Performance Web'],
+  webSince:   1995,
+  claimsToFame: [
+    'Prototype.js',
+    'Ruby On Rails',
+    'Bien Développer pour le Web 2.0',
+    'Prototype and Script.aculo.us',
+    'Paris Web',
+    'NodeSchool Paris'
+  ]
+}
+          </code></pre>
+				</section>
+
+        <section data-state="theme-color-silver-green">
+          <section id="naming-and-support">
+            <h1>ES2015+</h1>
+            <h3>gni ?!</h3>
+          </section>
+
+          <section id="es2015" data-duration="01:00">
+            <h2>ES6 ou ES2015 ?</h2>
+
+            <p>Rappel : ES = ECMAScript = standard officiel de JavaScript.</p>
+            <br/>
+            <p>Avant 2015, on disait ES6, ES7…</p>
+            <p>Par exemple, <strong>ES3 = 1999</strong>, ES5 = 2009, ES6 = 2015</p>
+            <br/>
+            <p>Mais depuis 2015, on sort une version par an (en juin).</p>
+            <p>On « met la pression » de tenue à jour en numérotant par année.</p>
+            <p>Les noms officiels sont donc désormais ES2015, ES2016, etc.</p>
+          </section>
+
+          <section id="native-support" data-duration="03:00">
+            <h2>Et si on avait besoin de rien ?</h2>
+
+            <p>La prise en charge native est bien meilleure que ce qu’on croit.</p>
+            <ul>
+              <li>Edge 14 = 93%</li>
+              <li>Firefox 52 = 94%</li>
+              <li>Chrome 53 / Opera 40 = 97%</li>
+              <li>Safari 10 (dont iOS 10) = 100%</li>
+              <li>Node 6.9 (LTS) = 99%</li>
+            </ul>
+
+            <p>Et « 90 % » ça suffit en général largement 😉</p>
+          </section>
+
+          <section id="support-cracks" data-duration="01:30">
+            <h2>OK mais… dans la vraie vie…</h2>
+
+            <p>Pas encore de solution propre aux modules ES2015 natifs. <br/>Vous savez ce truc qui déboîte :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+<u>import React, { PropTypes } from 'react'</u>
+
+<u>export default</u> function Gauge ({ value, max = 100 }) {
+  return &lt;LinearProgress mode='determinate' value={value} max={max} /&gt;
+}
+            </code></pre>
+
+            <p>IE (même 11), Firefox &lt; 45, Chrome &lt; 49, Opera &lt; 36, Safari &lt; 10, iOS &lt; 10, Node &lt 6, Android Browser…</p>
+          </section>
+
+          <section id="es2016-plus" data-duration="00:30">
+            <h2>Et ES2016+, alors ?</h2>
+
+            <p>En plus on n’a parlé que de ES2015 là, mais on a ES2016, non ?</p>
+            <p>Et l’an prochain, avec ES2017 on fait quoi ? Et l’année d’après ?</p>
+          </section>
+        </section> <!-- #naming-and-support -->
+
+        <section data-state="theme-color-forest-yellow">
+          <section id="babel">
+            <h1><img src="images/babel-logo.svg" style="background: none" width="100%" alt="Babel !" title="Logo du projet Babel" /></h1>
+            <h3>ça roxxe des poneys</h3>
+          </section>
+
+          <section id="babel-principle" data-duration="00:30">
+            <h2>Principe</h2>
+
+            <p>Transpileur : source ➡️ autre source</p>
+            <p>En l’occurence, « autre source » peut descendre jusqu’à ES5</p>
+            <p>L’idée : utiliser les dernières specs <strong>aujourd’hui</strong> (du moment qu’elles sont transpilables).</p>
+            <p>La performance n’est, en pratique, pas un problème.</p>
+            <footer>(En pratique, presque tout ES2015 est transpilable, sauf les proxies)</footer>
+          </section>
+
+          <section id="babel-ecosystem" data-duration="01:00">
+            <h2>Babel et l’écosystème JS</h2>
+
+            <p>Babel est téléchargé (npm) plus de 57K/jour</p>
+            <p>Environ 2 000 modules en dépendent</p>
+            <p>Quand Babel a un souci, l’écosystème JS a chaud…</p>
+            <p><a href="https://babeljs.io/docs/setup/">Intégré avec l’univers</a> (on y reviendra)</p>
+            <p>A permis l’essor (enfin !) d’ES2015+ dans des projets de premier plan (React, Ember 2, Aurelia, JSPM…) et leurs utilisateurs (Facebook, Airbnb, Instagram, etc.)</p>
+          </section>
+
+          <section id="babel-backers" data-duration="00:30">
+            <h2>Pérennité de Babel</h2>
+
+            <p>Né en 2014, le bébé de Sebastian McKenzie 🙏.</p>
+            <p>Désormais 250+ contributeurs.</p>
+            <p>Comme Facebook l’a jugé critique à la mission, ils ont fait comme d’hab’ : on embauche le créateur et les plus gros contributeurs, juste pour continuer.</p>
+            <p>Élément critique d’infrastructure pour beaucoup de grosses boîtes, et 100% FLOSS, donc on est tranquilles.</p>
+            <p>On aura toujours besoin de Babel pour jouer tôt avec les fonctionnalités futures (ce qui est essentiel au processus du TC39).</p>
+          </section>
+
+          <section id="babel-cherry-pick" data-duration="00:30">
+            <h2>Inutile de tout transpiler !</h2>
+
+            <p>Depuis Babel 6, on choisit les syntaxes qu’on veut transpiler.  Tout le reste est laissé tel quel (considéré natif).</p>
+
+            <p>Plus la prise en charge native augmente, moins on a besoin de transpiler de portions de code.  On a tout intérêt à éviter l’approche « bulldozer » hors des PoC / démos / tutos.</p>
+
+            <p>On gagne en perfs au build (transpilation) et à l’exécution (code natif plutôt que polyfillé).</p>
+
+            <footer>Notez toutefois que le code transpilé par Babel a des performances remarquables.</footer>
+          </section>
+
+          <section id="babel-plugins" data-duration="01:00">
+            <h2>Plugins</h2>
+            <h3>Syntaxes et transforms</h3>
+
+            <p>Un plugin de <strong>syntaxe</strong> permet au parser de <strong>reconnaître</strong> une syntaxe au sein du flux JS.  Mais Babel ne la transpile pas pour autant.</p>
+            <p>Un plugin de <strong>transform(ation)</strong> applique le <em>transpiling</em> correspondant pour aboutir à de l’ES5.  Ils exploitent automatiquement les éventuels plugins de syntaxe dont ils ont besoin.</p>
+            <p>
+              Mais <a href="https://babeljs.io/docs/plugins/">ça fait du monde</a> :
+              Babel propose actuellement <strong>plus de 60 transforms</strong>, dont 21 rien que pour ES2015 !
+            </p>
+          </section>
+
+          <section id="babel-presets" data-duration="01:00">
+            <h2>Presets</h2>
+
+            <p>On a donc la notion de <strong>preset</strong> : des groupes thématiques de plugins pour un but précis. On en compte…</p>
+
+            <ul>
+              <li><strong>5 officiels</strong> (<tt>es2015</tt>, <tt>es2016</tt>, <tt>es2017</tt>, <strong><tt>latest</tt></strong> et <tt>react</tt>),</li>
+              <li>4 expérimentaux dédiés aux stades TC-39 (<tt>stage-0</tt> à <tt>stage-3</tt>),</li>
+              <li>et plus de <strong>750 communautaires !</strong></li>
+            </ul>
+
+            <p>Par exemple, <tt>latest</tt> transpile l’univers (tout ES2015+), mais les contribs ont <tt>latest-minimal</tt>, idéal en Node, qui <em>feature-detect</em> point par point 😎</p>
+
+            <p>On peut bien sûr mélanger presets et plugins spécifiques.</p>
+          </section>
+
+          <section id="babel-beyond-es2016" data-duration="00:30">
+            <h2>Bien plus qu’ES2016</h2>
+
+            <p>On l’a vu, Babel gère déjà ES2016, ES2017, et les stades qui alimenteront les versions ultérieures. Par exemple :</p>
+
+            <ul>
+              <li><em>object spread/rest</em> et <tt>static</tt>, qui sont au stade 2</li>
+              <li>le <em>binding operator</em> qui est au stade 0</li>
+            </ul>
+
+            <p>Mais on a aussi des plugins (officiels !) de syntaxes tierces (notamment JSX et les annotations Flow), de conversion de modules (ex. ES2015 ➡️ CommonJS), de minification / optimisation (notamment pour React).</p>
+          </section>
+
+          <section id="babel-settings" data-duration="00:30">
+            <h2>Comment je lui dis ?</h2>
+
+            <p>Soit via un fichier <tt>.babelrc</tt> (marche partout)</p>
+            <p>Soit via une clé <code>"babel"</code> dans le <tt>package.json</tt> (si tu transpiles au sein d’un script npm).</p>
+
+            <pre><code class="language-json" data-trim>
+{
+  "presets": ["latest-minimal"],
+  "plugins": [
+    "transform-object-rest-spread", "transform-class-properties",
+    "transform-function-bind"
+  ]
+}
+            </code></pre>
+
+            <p>Du coup il faut avoir les modules :</p>
+
+            <pre><code class="language-bash" data-trim>
+npm install --save-dev babel-preset-latest-minimal \
+  babel-transform-object-rest-spread babel-transform-class-properties \
+  babel-transform-function-bind
+            </code></pre>
+          </section>
+        </section> <!-- #babel -->
+
+        <section data-state="theme-color-blue-yellow">
+          <section id="babelizing">
+            <h1>Jusqu’où je « babelize » ?</h1>
+          </section>
+
+          <section id="babelize-ie9-plus" data-duration="01:00">
+            <h2>Côté browser (si IE9+)</h2>
+
+            <p class="breathing">En gros, il te faut tout. IE9 a 100% d’ES5 (hors le mode strict), mais 0% d’ES2015. IE10 en a 3%, IE11… 11%.  Donc bon.</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+"presets": ["es2015"] // ou "latest" si tu veux E2015+
+            </code></pre>
+          </section>
+
+          <section id="babelize-evergreens" data-duration="01:00">
+            <h2>Côté browsers (evergreens)</h2>
+
+            <p class="breathing">Tu prends les 2 dernières versions (façon Autoprefixer), tu examines tes besoins et la <a href="https://kangax.github.io/compat-table/es6/">table de compatibilité</a>, et tu listes ce qui manque…  Exemple :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+"plugins": [
+  "transform-es2015-parameters",
+  "transform-es2015-destructuring",
+  "transform-es2015-spread",
+  "transform-async-to-generator",
+  "transform-transform-runtime",
+  "transform-regenerator"
+]
+            </code></pre>
+
+            <footer>(Pour Safari, qui rame loin, j’ai limité à 10+)</footer>
+          </section>
+
+          <section id="babelize-node4" data-duration="01:00">
+            <h2>Node 4.x LTS</h2>
+
+            <p>On a des <a href="https://github.com/jbach/babel-preset-es2015-node4">presets dédiés</a>, maintenus par la communauté. Exemple :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+"presets": ["es2015-node4", "es2016-node4"], // ou ["latest-minimal"]
+"plugins": ["transform-regenerator"]
+            </code></pre>
+
+            <p>Mais c’est bon avec Node 4, là…  Node 6 est la nouvelle LTS et on est sur Node 7 maintenant, les gens !</p>
+          </section>
+
+          <section id="babelize-node6" data-duration="01:00">
+            <h2>Node 6.x LTS</h2>
+
+            <p>Excellente prise en charge native de ES2015+ (99% depuis la 6.8), le preset communautaire est donc nettement plus léger.</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+"presets": ["latest-node6"] // ou ["latest-minimal"]
+            </code></pre>
+          </section>
+
+          <section id="babelize-electron" data-duration="01:00">
+            <h2>Electron</h2>
+
+            <p>Electron 1.4.5 est basé sur Chromium 53, Node 6.5 et <strong>v8 5.3</strong>, autant dire que vous avez un gros, gros paquet d’ES pris en charge en natif (quasiment tout ES2016 et diverses parties d’ES2017).</p>
+
+            <p class="breathing">Vu que le v8 est partagé, la meilleure approche est sans doute :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+"presets": ["latest-minimal"]
+            </code></pre>
+          </section>
+        </section> <!-- #babelizing -->
+
+        <section data-state="theme-color-silver-green">
+          <section id="babel-ides">
+            <h3>Comment j’intègre Babel dans</h3>
+            <h1>mon EDI ?</h1>
+          </section>
+
+          <section id="vscode" data-duration="00:45">
+            <h2>Visual Studio Code</h2>
+
+            <pre><code class="language-bash" data-trim>
+ext install vscode-babel-coloring
+ext install theme-monokaiextended # meilleure différenciation visuelle
+</code></pre>
+
+            <img src="images/babel-vscode.png" />
+          </section>
+
+          <section id="vs" data-duration="00:30">
+            <h2>Visual Studio</h2>
+
+            <p><a href="https://webtooling.visualstudio.com/languages/javascript/">ES2015 est pas mal intégré</a> dans la dernière version.</p>
+
+            <footer>(mais vous n’aurez pas d’image parce que VS 2015 Community est trop gros pour mes VM Windows)</footer>
+          </section>
+
+          <section id="jetbrains" data-duration="00:45">
+            <h2>JetBrains</h2>
+            <h4>(IntelliJ, WebStorm, PHPStorm, etc.)</h4>
+
+            <p>Les versions 2016 récentes (ex. <a href="https://www.jetbrains.com/webstorm/whatsnew/">WebStorm 2016.2</a>+) intègrent ES2015 en natif, ainsi que Babel comme <em>watcher</em>.</p>
+
+            <img src="images/babel-webstorm.png" />
+          </section>
+
+          <section id="eclipse" data-duration="00:45">
+            <h2>Eclipse</h2>
+            <h4>#compassion</h4>
+
+            <p>Désespérément à la rue (et lent, et lourd…) mais de valeureux membres de la communauté maintiennent <a href="https://github.com/angelozerr/tern.java/wiki/Getting-Started">Tern IDE</a>, basé sur l’excellent <a href="http://ternjs.net/">Tern.js</a>.</p>
+
+            <img src="images/babel-eclipse.png" />
+          </section>
+        </section> <!-- #babel-ides -->
+
+        <section data-state="theme-color-forest-yellow">
+          <section id="babel-editors">
+            <h3>Comment j’intègre Babel dans</h3>
+            <h1>mon éditeur ?</h1>
+          </section>
+
+          <section id="st3" data-duration="01:00">
+            <h2>Sublime Text 3</h2>
+
+            <p>Installer <a href="https://packagecontrol.io/">PackageControl</a> puis le paquet <a href="https://packagecontrol.io/packages/Babel">Babel</a> (<strong>pas</strong> le paquet ES.Next). Idéalement, faire de « JavaScript (Babel) » la syntaxe par défaut pour les fichiers <tt>.js</tt>.</p>
+
+            <img src="images/babel-st3.png" />
+          </section>
+
+          <section id="atom" data-duration="00:30">
+            <h2>Atom</h2>
+
+            <p>Bonne prise en charge en natif ; nombreuses extensions possibles avec les paquets <a href="https://atom.io/packages/language-babel">language-babel</a> et <a href="https://atom.io/packages/atom-ternjs">atom-ternjs</a>.</p>
+
+            <img src="images/babel-atom.png" />
+          </section>
+
+          <section id="brackets" data-duration="00:30">
+            <h2>Brackets</h2>
+
+            <p>Gestion correcte en natif, on aura besoin de l’extension JSX si on utilise cette syntaxe complémentaire.</p>
+
+            <img src="images/babel-brackets.png" />
+          </section>
+
+          <section id="notepadpp" data-duration="00:30">
+            <h2>Notepad++</h2>
+
+            <p>Non, je plaisante.</p>
+            <p>Sidéré <s>qu’autant de</s> que des gens s’en servent encore…</p>
+
+            <img src="images/babel-notepadpp.png" />
+          </section>
+
+          <section id="vim" data-duration="00:30">
+            <h2>Vim</h2>
+
+            <p>Évidemment, on peut tout faire.</p>
+            <p>
+              Les trois plugins les plus utilisés sont
+              <a href="https://github.com/pangloss/vim-javascript">vim-javascript</a>,
+              <a href="https://github.com/mxw/vim-jsx">vim-jsx</a> et
+              <a href="https://github.com/othree/es.next.syntax.vim">es.next.syntax.vim</a>.
+            </p>
+
+            <img src="images/babel-vim.png" />
+          </section>
+
+          <section id="emacs" data-duration="00:30">
+            <h2>Emacs</h2>
+
+            <p>Évidemment… on peut tout faire.</p>
+            <p>
+              Manifestement, le plugin populaire est
+              <a href="https://github.com/mooz/js2-mode">js2-mode</a>.
+            </p>
+
+            <img src="images/babel-emacs.png" />
+          </section>
+        </section> <!-- #babel-editors -->
+
+        <section data-state="theme-color-blue-yellow">
+          <section id="babel-playgrounds">
+            <h3>Comment j’intègre Babel dans</h3>
+            <h1>mon éditeur/EDI en ligne ?</h1>
+          </section>
+
+          <section id="jsbin" data-duration="00:30">
+            <h2>JSBin</h2>
+
+            <p>Il suffit de choisir le mode ES6 / Babel (ou JSX) dans la liste de syntaxes pour le panneau JavaScript.</p>
+            <p>Attention, il utilise JSHint par défaut plutôt qu’ESLint, ce qui rend moins pratique la prise en charge d’ES2015.</p>
+
+            <img src="images/babel-jsbin.png" />
+          </section>
+
+          <section id="codepen" data-duration="00:30">
+            <h2>CodePen</h2>
+
+            <p>Il suffit de choisir Babel comme préprocesseur dans les réglages du panneau JavaScript.</p>
+
+            <img src="images/babel-codepen.png" />
+          </section>
+
+          <section id="jsfiddle" data-duration="00:30">
+            <h2>JSFiddle</h2>
+
+            <p>Il suffit de choisir Babel comme langage dans les réglages du panneau JavaScript.</p>
+
+            <img src="images/babel-jsfiddle.png" />
+          </section>
+
+          <section id="cloud9" data-duration="01:00">
+            <h2>Cloud9</h2>
+
+            <p>ES2015+ et Babel pris en charge nativement.</p>
+
+            <img src="images/babel-c9.png" />
+          </section>
+        </section> <!-- #babel-playgrounds -->
+
+        <section data-state="theme-color-silver-green">
+          <section id="babel-builds">
+            <h3>Comment j’intègre Babel dans</h3>
+            <h1>ma chaîne de build ?</h1>
+          </section>
+
+<!--
+  + (08'00") Ma chaîne de build
+ -->
+
+          <section id="browserify" data-duration="01:00">
+            <h2>Browserify</h2>
+
+            <p>C’est le <em>transform</em> <a href="https://github.com/babel/babelify"><strong>babelify</strong></a> qui fait l’interface. CLI :</p>
+
+            <pre class="command-line" data-prompt="$" data-output="2"><code class="language-bash" data-trim data-keep-tags="u">
+npm install --save-dev babelify babel-core \
+  babel-preset-latest babel-preset-react
+browserify index.js -o bundle.js <u>-t babelify --presets latest react</u>
+            </code></pre>
+
+            <p class="breathing">Ou dans votre script de <em>bundling</em> :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+var fs = require('fs')
+var browserify = require('browserify')
+browserify('./index.js')
+  <u>.transform('babelify', { presets: ['latest', 'react'] })</u>
+  .bundle()
+  .pipe(fs.createWriteStream('bundle.js'))
+            </code></pre>
+          </section>
+
+          <section id="webpack" data-duration="01:00">
+            <h2>Webpack</h2>
+
+            <p>On utilise le <a href="https://github.com/babel/babel-loader"><strong>babel-loader</strong></a>.  La config ressemble à ceci :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+// …
+module: {
+  // …
+  loaders: [
+    // …
+    {
+      test: /\.(?:jsx?|es6)$/,
+      exclude: /(?:node_modules|bower_components)/,
+      loader: 'babel',
+      query: { presets: ['latest', 'react'] }
+    }
+    // …
+  ]
+  // …
+}
+            </code></pre>
+          </section>
+
+          <section id="rollup" data-duration="01:00">
+            <h2>Rollup</h2>
+
+            <p>Le plus simple, c’est le plugin <a href="https://github.com/rollup/rollup-plugin-babel"><strong>babel</strong></a></p>
+            <pre class="command-line" data-prompt="$" data-output="2"><code class="language-bash" data-trim data-keep-tags="u">
+npm install --save-dev rollup-plugin-babel <u>babel-preset-es2015-rollup</u>
+            </code></pre>
+
+            <p class="breathing">Dans la config Rollup :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+import json from 'rollup-plugin-json'
+<u>import babel from 'rollup-plugin-babel'</u>
+
+export default {
+  entry: './index.js',
+  format: 'cjs',
+  plugins: [ json()<u>, babel()</u> ],
+  dest: 'bundle.js'
+};
+            </code></pre>
+
+            <p>L’activation du preset se fait par un fichier <tt>.babelrc</tt>.</p>
+          </section>
+
+          <section id="gulp" data-duration="01:00">
+            <h2>Gulp</h2>
+
+            <p>Naturellement, on a <a href="https://github.com/babel/gulp-babel"><strong>gulp-babel</strong></a>.  Pour la version avec les sourcemaps, ça donne un truc dans ce style :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+var gulp = require('gulp')
+var sourcemaps = require('gulp-sourcemaps')
+<u>var babel = require('gulp-babel')</u>
+var concat = require('gulp-concat')
+
+gulp.task('default', function () {
+  return gulp.src('src/**\/*.js')
+    .pipe(sourcemaps.init())
+    <u>.pipe(babel())</u>
+    .pipe(concat('bundle.js'))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest('dist'))
+})
+            </code></pre>
+
+            <p>Là aussi, configuration externe par <tt>.babelrc</tt>.</p>
+          </section>
+
+          <section id="grunt" data-duration="01:00">
+            <h2>Grunt</h2>
+
+            <p>Pas de surprise : il y a <a href="https://github.com/babel/grunt-babel"><strong>grunt-babel</strong></a>.  Exemple :</p>
+
+            <pre><code class="language-js" data-trim data-keep-tags="u">
+require('load-grunt-tasks')(grunt)
+
+grunt.initConfig({
+  <u>babel: {
+    options: { sourceMap: true },
+    dist: {
+      files: { 'dist/bundle.js': 'src/**\/*.js' }
+    }
+  }</u>
+})
+
+grunt.registerTask('default', [<u>'babel'</u>])
+            </code></pre>
+            <p>Et re-configuration par <tt>.babelrc</tt>.</p>
+          </section>
+
+          <section id="other-builders" data-duration="00:15">
+            <h2>T’as pas parlé du mien !</h2>
+
+            <p>Moi non, mais je suis sûr que <a href="http://babeljs.io/docs/setup/">Babel oui</a>.</p>
+            <p>D’autant que la majorité de ces intégrations sont officielles, maintenues au sein du projet Babel.</p>
+          </section>
+        </section> <!-- #babel-builds -->
+
+        <section data-state="theme-color-forest-yellow">
+          <section id="typescript">
+            <h1>Et TypeScript ?</h1>
+          </section>
+
+          <section id="ts-vs-es" data-duration="01:30">
+            <h2>TypeScript vs. ES2015+</h2>
+
+            <p class="breathing">TS ≈ ES2016 + annotations de type optionnelles (+ compat JSX)</p>
+            <p>TS2 transpile vers ES5 par défaut, mais peut viser ES2015.</p>
+            <p>Inclus par défaut dans VS2013u2 et ultérieurs + VSCode.</p>
+            <p>Peu d’inférence de type ; se repose surtout sur les annotations.</p>
+            <p>Comme souvent avec IntelliSense, on a des définitions pré-compilées externes pour éviter de devoir faire de l’inférence profonde.  Vaste référentiel sur <a href="http://definitelytyped.org/">DefinitelyTyped</a>.</p>
+          </section>
+
+          <section id="ts-integration" data-duration="00:30">
+            <h2>Intégrer TypeScript</h2>
+
+            <p>La documentation liste <a href="https://www.typescriptlang.org/docs/handbook/integrating-with-build-tools.html">pas mal d’intégration classiques</a> : Browserify, Webpack, Grunt, Gulp, JSPM/Rollup, etc.</p>
+            <p>En somme, ça se fait bien.</p>
+          </section>
+
+          <section id="flow" data-duration="01:00">
+            <h2>Un mot sur Flow</h2>
+
+            <p>TS n’est pas le seul moyen d’avoir des infos de typage fines sur du code JS.  Le projet <a href="https://flowtype.org/">Flow</a>, de Facebook, est excellent.</p>
+
+            <p class="breathing">J’ai souvent entendu que les retours de Flow étaient plus utiles / efficaces que ceux de TS, mais je n’ai pas comparé personnellement.</p>
+
+            <p>Notez que Babel est capable de <a href="http://babeljs.io/docs/plugins/transform-flow-comments/">lire du code annoté Flow</a>, et que des outils avancés comme Tern.js savent exploiter les annotations Flow pour leur assistance au code.</p>
+          </section>
+        </section> <!-- #typescript -->
+
+        <section>
+          <h1>Merci !</h1>
+          <h3>Et que JS soit avec vous.</h3>
+          <br>
+          <p>Christophe Porteneuve</p>
+          <p><a href="https://twitter.com/porteneuve">@porteneuve</a></p>
+
+          <p class="breathing">
+            Les slides sont sur <a href="http://bit.ly/blend-es2015">bit.ly/blend-es2015</a><br/>
+          </p>
+        </section>
+
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+    <script src="plugin/highlight/prism.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+        width: '95%',
+        height: '90%',
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'linear', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
